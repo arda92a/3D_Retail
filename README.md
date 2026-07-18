@@ -1,55 +1,73 @@
 # Semantic 3D Retail Shelf Analytics
 
-**End-to-End Pipeline: Novel View Synthesis & Semantic 3D Reconstruction for Retail Intelligence**
+**One Label → 3D Scene → Unlimited Annotated Views**
 
-This repository tracks the full engineering lifecycle of a retail AI system that replaces fragile 2D image-stitching methods with a volumetric 3D reconstruction backbone — enabling automated, occlusion-robust shelf analytics (OOS detection, planogram compliance, SKU recognition) powered by a self-generating synthetic data factory.
+This repository tracks the full engineering lifecycle of a retail AI system built on a core principle: **a human labeler annotates a single frame once, and the 3D pipeline automatically generates thousands of perfectly annotated training images** from every possible angle.
+
+The system uses existing shelf video sequences to reconstruct a semantically-aware 3D Gaussian scene (digital twin). That scene becomes an infinite synthetic data factory — producing pixel-perfect labels for OOS detection, planogram compliance, and SKU recognition without any further human annotation effort.
 
 ---
 
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
-2. [Pipeline Architecture](#pipeline-architecture)
-3. [Step-by-Step Roadmap](#step-by-step-roadmap)
-   - [Step 1 — Data Collection & 2D Semantic Extraction](#step-1--data-collection--2d-semantic-extraction)
-   - [Step 2 — Robust Camera Pose Estimation (SfM)](#step-2--robust-camera-pose-estimation-sfm)
+2. [What We Already Have](#what-we-already-have)
+3. [Pipeline Architecture](#pipeline-architecture)
+4. [Step-by-Step Roadmap](#step-by-step-roadmap)
+   - [Step 1 — Single-Frame Annotation by Labeling Team](#step-1--single-frame-annotation-by-labeling-team)
+   - [Step 2 — Camera Pose Estimation (SfM) on Existing Sequences](#step-2--camera-pose-estimation-sfm-on-existing-sequences)
    - [Step 3 — Semantic 3DGS Training & Optimization](#step-3--semantic-3dgs-training--optimization)
    - [Step 4 — Synthetic Data Factory (Rendering Pipeline)](#step-4--synthetic-data-factory-rendering-pipeline)
    - [Step 5 — Downstream Model Training & Deployment](#step-5--downstream-model-training--deployment)
-4. [Key Repositories](#key-repositories)
-5. [Papers to Read](#papers-to-read)
+5. [Key Repositories](#key-repositories)
+6. [Papers to Read](#papers-to-read)
    - [Core 3DGS & NeRF Foundations](#-core-3dgs--nerf-foundations)
    - [Semantic Scene Understanding in 3D](#-semantic-scene-understanding-in-3d)
    - [Structure-from-Motion & Camera Pose](#-structure-from-motion--camera-pose)
    - [Synthetic Data Generation](#-synthetic-data-generation)
    - [Retail Analytics & Downstream Applications](#-retail-analytics--downstream-applications)
-6. [Hardware & Software Requirements](#hardware--software-requirements)
-7. [Directory Structure](#directory-structure)
-8. [Progress Tracker](#progress-tracker)
+7. [Hardware & Software Requirements](#hardware--software-requirements)
+8. [Directory Structure](#directory-structure)
+9. [Progress Tracker](#progress-tracker)
 
 ---
 
 ## Project Overview
 
-Modern retail shelf analytics has hit a structural ceiling with 2D feature-matching and image-stitching pipelines. Repeating product patterns, extreme parallax, and occlusion make these systems brittle at scale.
+We already have shelf video sequences and extracted frame visuals with product boxes visible in them. **No additional data collection is required.**
 
-**This project implements a 5-step volumetric intelligence pipeline:**
+The bottleneck we solve is annotation cost and scale. Traditionally, every training image requires a human labeler. This project collapses that cost to a single annotation:
 
 ```
-Real-World Video  ──►  Camera Poses (SfM)  ──►  Semantic 3DGS Model
-                                                        │
-                                               Synthetic Data Factory
-                                                        │
-                                          Production YOLO / Detection Models
+Human labeler annotates 1 frame  ──►  Labels lift into 3D space
+                                              │
+                              3D scene renders from 10,000+ viewpoints
+                                              │
+                          Each render has auto-generated pixel-perfect masks
+                                              │
+                              Production detector trains on this data
 ```
 
-The core insight: treat the 3D Gaussian scene not just as a visualization tool, but as a **zero-cost, automatically annotated synthetic data generator**. A single real-world capture session produces infinite training variations — different angles, lighting, partial occlusions — all with pixel-perfect ground-truth labels derived mathematically from the 3D representation.
+**The key technical mechanism:** Gaussian Grouping assigns a 16-dimensional identity vector to each 3D Gaussian primitive. Supervised by the one labeled frame, the 3D-KNN spatial regularizer propagates those identities through the entire scene — every product box becomes an independently addressable 3D object. From that point, rendering from any virtual camera angle automatically produces both the RGB frame and its exact segmentation mask, with mathematically correct occlusion handling via Z-buffer depth ordering.
 
 **Target capabilities:**
 - Out-of-Stock (OOS) detection in milliseconds
 - Planogram compliance verification
 - SKU-level instance segmentation from any camera angle
-- Automatic retraining when new products are introduced (few-shot → 3D → thousands of synthetic samples)
+- Rapid onboarding of new products: label 1 frame → 3D → thousands of training samples in hours
+
+---
+
+## What We Already Have
+
+| Asset | Status | Notes |
+|-------|--------|-------|
+| Shelf video sequences | ✅ Available | Multi-frame sequences from retail environment |
+| Extracted frame visuals | ✅ Available | Individual frames with product boxes clearly visible |
+| Product box instances | ✅ Visible in frames | Ready for annotation |
+| Human labeling team | ✅ Available | Will annotate a single reference frame per scene |
+
+**Starting point for the pipeline:** Step 1 (annotation of one frame) → directly into SfM → 3DGS.
 
 ---
 
@@ -57,120 +75,138 @@ The core insight: treat the 3D Gaussian scene not just as a visualization tool, 
 
 ```mermaid
 graph LR
-    A[📷 Shelf Video\n4K 60fps + CPL Filter] --> B[🔑 Keyframe Extraction\n10–20% sampling]
-    B --> C[🎭 SAM / YOLO\nZero-shot Instance Masks]
-    C --> D{SKU ID Assignment}
-    D --> E[🗺️ SfM / GLUEMAP\nCamera Pose Estimation]
-    E --> F[☁️ Sparse Point Cloud]
-    F --> G[🫧 3DGS Initialization\nGaussian Ellipsoids]
-    C --> G
-    G --> H[🏷️ Gaussian Grouping\n16-dim Identity Encoding]
-    H --> I[✅ Semantic 3D Scene\nDigital Twin]
-    I --> J[🎬 Virtual Camera Rendering\nDual Output: RGB + Mask]
-    J --> K[📦 Synthetic Dataset\nTens of Thousands of Annotated Frames]
-    K --> L[🤖 YOLO / Detector Training\nReal + Synthetic Mix]
-    L --> M[🚀 Edge Deployment\nStore Cameras / Robots]
+    A[✅ Existing\nVideo Sequences\n+ Frame Visuals] --> B[🖊️ Labeling Team\nAnnotates 1 Frame\nSKU masks + IDs]
+    A --> C[🗺️ SfM / GLUEMAP\nCamera Pose Estimation]
+    B --> D
+    C --> D[☁️ Sparse Point Cloud\n+ 1 Labeled Frame]
+    D --> E[🫧 3DGS Init\nGaussian Ellipsoids]
+    E --> F[🏷️ Gaussian Grouping\n16-dim Identity Encoding\nPropagated from 1 label]
+    F --> G[✅ Semantic 3D Scene\nDigital Twin of Shelf]
+    G --> H[🎬 Virtual Camera Rendering\nRGB + Auto Mask\nany angle, any pose]
+    H --> I[📦 Synthetic Dataset\n10,000+ Annotated Frames\nzero additional labeling]
+    I --> J[🤖 YOLO / Detector Training\nReal + Synthetic Mix]
+    J --> K[🚀 Edge Deployment\nStore Cameras / Robots]
 ```
 
 ---
 
 ## Step-by-Step Roadmap
 
-### Step 1 — Data Collection & 2D Semantic Extraction
+### Step 1 — Single-Frame Annotation by Labeling Team
 
-**Goal:** Capture high-quality shelf video and produce sparse semantic seed labels.
+**Goal:** Produce one pixel-accurate, SKU-labeled reference frame per scene. This is the **only human annotation required** for the entire pipeline.
 
-| Task | Method | Notes |
-|------|--------|-------|
-| Video capture | 4K 60fps, gimbal-stabilized | Short exposure to minimize motion blur |
-| Lens filter | Circular Polarizing (CPL) | Eliminates shelf reflections critical for SfM |
-| Keyframe extraction | Sample 10–20% of frames | Sufficient density for reconstruction |
-| Instance segmentation | SAM (zero-shot) or pre-trained YOLO | Applied only to keyframes |
-| SKU ID assignment | Manual or barcode-assisted labeling | Map mask → real-world product ID |
+| Task | Responsible | Tool | Output |
+|------|-------------|------|--------|
+| Select best reference frame | Engineering | Manual review | 1 representative frame per scene |
+| Instance segmentation masks | Labeling team | CVAT / Label Studio / Roboflow | Per-product polygon masks |
+| SKU ID assignment | Labeling team | Barcode reference or product catalog | `mask → SKU_ID` mapping |
+| Quality check | Engineering | Mask overlap / coverage review | Validated annotation file |
 
-**Output:** Sparse set of keyframes with pixel-accurate instance masks and SKU identities.
+**Format:** Export annotations in COCO JSON format (`images`, `annotations`, `categories`).
+
+> **Why only 1 frame?**
+> The 3D-KNN spatial regularizer in Gaussian Grouping propagates identity labels across the full 3D scene from even a single 2D supervision signal. The 3D geometry — reconstructed from the full video sequence — provides the structural context; the single label provides the semantic seed.
+
+**Output:** `data/annotations/scene_XX_reference.json` + `data/keyframes/scene_XX_reference.jpg`
 
 ---
 
-### Step 2 — Robust Camera Pose Estimation (SfM)
+### Step 2 — Camera Pose Estimation (SfM) on Existing Sequences
 
-**Goal:** Recover accurate 6-DoF camera poses for every captured frame.
+**Goal:** Recover accurate 6-DoF camera poses from the existing video sequences to initialize the 3D scene.
 
 | Scenario | Recommended Pipeline | Why |
 |----------|----------------------|-----|
-| Accuracy-first (static setup) | **GLUEMAP** (SALAD → MAST3R → COLMAP BA) | Eliminates false matches from repeating shelf patterns |
-| Speed-first (edge / real-time) | **MV-DUSt3R+** | No pre-calibration needed; 2-second sparse reconstruction |
-| Fallback / validation | **COLMAP** vanilla | Well-established baseline |
+| Accuracy-first (default) | **GLUEMAP** (SALAD → MAST3R → COLMAP BA) | Eliminates false matches from repeating shelf patterns; handles texture repetition |
+| Speed-first / edge use | **MV-DUSt3R+** | No pre-calibration; 2-second sparse reconstruction from sparse views |
+| Fallback / validation | **COLMAP** vanilla | Well-established baseline for well-textured scenes |
 
-> ⚠️ Avoid vanilla COLMAP alone on retail corridors — repeating product textures cause frequent rotation drift.
+> ⚠️ Vanilla COLMAP alone frequently drifts on retail corridors due to repeating product textures. GLUEMAP is strongly preferred.
 
-**Output:** Camera intrinsics/extrinsics + sparse 3D point cloud.
+**Key inputs:** Existing frame sequences from `data/sequences/`
+
+**Output:** `models/sfm/` — camera intrinsics, extrinsics (`.txt` / `.bin`), sparse 3D point cloud (`.ply`)
 
 ---
 
 ### Step 3 — Semantic 3DGS Training & Optimization
 
-**Goal:** Build a semantically-labeled, manipulable 3D scene — the "digital twin" of the shelf.
+**Goal:** Fuse the sparse point cloud geometry with the single labeled frame to build a fully semantic digital twin of the shelf.
 
 **Architecture: Gaussian Grouping**
 
-Each 3D Gaussian primitive receives:
-- Standard geometric parameters (position, scale, rotation, opacity, color/SH coefficients)
-- A **16-dimensional Identity Encoding vector**
+Each 3D Gaussian primitive is initialized from the SfM point cloud and receives:
+- Standard geometric parameters (position $\mu$, scale $s$, rotation $q$, opacity $\alpha$, color SH coefficients)
+- A **16-dimensional Identity Encoding vector** $\mathbf{e}_i$
 
-During differentiable rasterization, the 2D identity projections are supervised against the sparse SAM masks using:
+During differentiable rasterization, the projected identity maps are supervised against the single labeled frame using:
 
 $$\mathcal{L}_{total} = \mathcal{L}_{rgb} + \lambda_1 \mathcal{L}_{2D\text{-identity}} + \lambda_2 \mathcal{L}_{3D\text{-KNN}}$$
 
-- $\mathcal{L}_{2D\text{-identity}}$: contrastive loss aligning projected identities to ground-truth masks
-- $\mathcal{L}_{3D\text{-KNN}}$: spatial regularizer ensuring neighboring Gaussians share identities
+| Loss term | Role |
+|-----------|------|
+| $\mathcal{L}_{rgb}$ | Standard photometric reconstruction loss |
+| $\mathcal{L}_{2D\text{-identity}}$ | Contrastive loss: Gaussians projecting into the same SKU mask share identity; those in different masks repel |
+| $\mathcal{L}_{3D\text{-KNN}}$ | Spatial regularizer: neighboring Gaussians in 3D space are encouraged to share identities — this is what **propagates labels beyond the single labeled view** |
 
-**Training time:** ~15–30 minutes on a single A100/H100 GPU.
+**Training time:** ~15–30 minutes on an A100/H100 GPU.
 
-**Output:** Each product on the shelf is an independently addressable, semantically-labeled 3D volume.
+**Output:** `models/gaussian/scene_XX.ply` — every product box is now an independently addressable, semantically-labeled 3D object.
 
 ---
 
 ### Step 4 — Synthetic Data Factory (Rendering Pipeline)
 
-**Goal:** Generate tens of thousands of annotated training frames with zero human labor.
+**Goal:** Use the trained semantic scene to generate thousands of annotated training frames with zero additional human labor.
 
 ```python
 # Conceptual rendering loop (Nerfstudio / gsplat API)
 for virtual_camera_pose in sample_random_trajectories(n=10_000):
-    rgb_frame    = render_gaussian_scene(scene, virtual_camera_pose, mode="rgb")
-    mask_frame   = render_gaussian_scene(scene, virtual_camera_pose, mode="identity")
-    bbox_2d      = derive_bounding_boxes_from_mask(mask_frame)
-    save(rgb_frame, mask_frame, bbox_2d)
+    rgb_frame   = render_scene(scene, virtual_camera_pose, mode="rgb")
+    mask_frame  = render_scene(scene, virtual_camera_pose, mode="identity")
+    bboxes_2d   = derive_bounding_boxes(mask_frame)          # exact, no human needed
+    save(rgb_frame, mask_frame, bboxes_2d, sku_ids)
 ```
 
-**Key advantage:** Z-buffer depth ordering in 3DGS ensures mathematically correct occlusion masks — even when one product is partially hidden behind another. No human annotator can match this accuracy.
+**Dual output per render:**
+1. **RGB frame** — photorealistic image from the virtual viewpoint
+2. **Identity mask** — pixel-perfect instance segmentation map, with correct occlusion handling via Z-buffer
 
-**Augmentation strategies:**
-- Random virtual camera trajectories (including impossible real-world angles)
-- Simulated lighting variation via SH coefficient perturbation
-- Product removal / rearrangement to simulate OOS / planogram violations
+**Why occlusion is solved:** When product A partially hides product B, the Z-buffer knows the exact 3D depth order of every Gaussian. The mask is generated from geometry, not guessed — impossible to get wrong.
 
-**Output:** Large-scale synthetic dataset: `{rgb_image, instance_mask, bounding_box, sku_id, camera_pose}`.
+**Augmentation strategies to maximize downstream model robustness:**
+- Random virtual camera trajectories (angles impossible in real-world capture)
+- SH coefficient perturbation to simulate different lighting conditions
+- Virtual product removal to synthesize OOS (empty shelf) scenarios
+- Gaussian displacement to simulate planogram violations
+
+**Output:** `data/synthetic/` — `{rgb, instance_mask, bbox_coco.json, camera_pose}` per frame
 
 ---
 
 ### Step 5 — Downstream Model Training & Deployment
 
-**Goal:** Train production-grade detection models and deploy to edge hardware.
+**Goal:** Train production-grade detection models on the synthetic dataset and deploy to edge hardware.
 
 | Phase | Details |
 |-------|---------|
-| Dataset mixing | Combine synthetic frames with limited real annotated data (real-plus-synthetic strategy) |
+| Dataset strategy | Synthetic frames + the original labeled frame (real-plus-synthetic mix) |
 | Base model | YOLOv8 / YOLOv11 or RT-DETR |
-| Training gain | Literature reports up to **+18% mAP** improvement with synthetic augmentation |
+| Expected training gain | Literature reports up to **+18% mAP** vs. real-data-only baselines |
 | Quantization | INT8 / FP16 for edge deployment |
-| Deployment targets | Store handheld terminals, smart cameras, autonomous shelf-scanning robots |
+| Deployment targets | Store cameras, handheld terminals, autonomous shelf-scanning robots |
+
+**Adding a new product (onboarding flow):**
+1. Labeling team annotates the new product in 1 frame
+2. Re-run Gaussian Grouping fine-tuning (~minutes)
+3. Re-render synthetic data for the new SKU
+4. Fine-tune the detector
 
 **Target metrics:**
 - OOS detection accuracy > 95%
-- Planogram compliance verification latency < 100ms per shelf segment
-- Generalization across lighting conditions and camera models
+- Planogram compliance verification < 100ms per shelf segment
+- Robust generalization across lighting conditions and camera hardware
 
 ---
 
@@ -280,27 +316,21 @@ for virtual_camera_pose in sample_random_trajectories(n=10_000):
 
 ## Hardware & Software Requirements
 
-### Capture Hardware
-- Camera: ≥4K resolution, 60fps capability
-- Stabilization: Gimbal (3-axis)
-- Lens filter: **Circular Polarizer (CPL)** — mandatory for reflective surfaces
-- Short exposure time: minimize motion blur for SfM
-
 ### Compute (Training)
 - GPU: NVIDIA A100 / H100 recommended (≥40GB VRAM for large scenes)
 - RAM: ≥64GB system RAM
-- Storage: ≥2TB NVMe (raw video + point clouds + Gaussian models)
+- Storage: ≥2TB NVMe (sequences + point clouds + Gaussian models + synthetic dataset)
 
 ### Core Software Stack
 ```
 Python 3.10+
 CUDA 11.8 / 12.x
 PyTorch 2.x
-nerfstudio / gsplat
-COLMAP
-gaussian-grouping
-segment-anything (SAM)
-ultralytics (YOLOv8+)
+nerfstudio / gsplat          # 3DGS training and rendering
+COLMAP / GLUEMAP             # Camera pose estimation
+gaussian-grouping            # Semantic identity encoding
+ultralytics (YOLOv8+)        # Downstream detector training
+Label Studio / CVAT          # Single-frame annotation UI
 ```
 
 ---
@@ -313,7 +343,7 @@ ultralytics (YOLOv8+)
 ├── 📄 README.md
 ├── 📄 requirements.txt
 │
-├── 📁 papers/              # Downloaded PDFs, organized by category
+├── 📁 papers/                   # Downloaded PDFs, organized by category
 │   ├── core-3dgs/
 │   ├── semantic-3d/
 │   ├── sfm-pose/
@@ -321,28 +351,31 @@ ultralytics (YOLOv8+)
 │   └── retail-analytics/
 │
 ├── 📁 data/
-│   ├── raw/                # Raw shelf video footage
-│   ├── keyframes/          # Extracted keyframes
-│   ├── masks/              # SAM / YOLO instance masks
-│   └── synthetic/          # Generated synthetic dataset
+│   ├── sequences/               # ✅ Existing video sequences
+│   ├── keyframes/               # ✅ Existing extracted frame visuals
+│   ├── annotations/             # Step 1 output: single labeled frame per scene
+│   │   └── scene_XX_reference.json   # COCO format: masks + SKU IDs
+│   └── synthetic/               # Step 4 output: rendered dataset
+│       ├── rgb/
+│       ├── masks/
+│       └── annotations_coco.json
 │
 ├── 📁 models/
-│   ├── sfm/                # SfM outputs (camera poses, point clouds)
-│   ├── gaussian/           # Trained 3DGS scene files
-│   └── yolo/               # Trained downstream YOLO models
+│   ├── sfm/                     # Step 2 output: camera poses, point clouds
+│   ├── gaussian/                # Step 3 output: trained 3DGS scene files
+│   └── yolo/                    # Step 5 output: trained downstream models
 │
 ├── 📁 scripts/
-│   ├── 01_extract_keyframes.py
-│   ├── 02_run_sam_segmentation.py
-│   ├── 03_run_sfm.sh
-│   ├── 04_train_gaussian_grouping.sh
-│   ├── 05_render_synthetic_data.py
-│   └── 06_train_yolo.py
+│   ├── 01_annotate_reference_frame.md   # Labeling team instructions
+│   ├── 02_run_sfm.sh                    # GLUEMAP / COLMAP pipeline
+│   ├── 03_train_gaussian_grouping.sh    # 3DGS + identity encoding
+│   ├── 04_render_synthetic_data.py      # Virtual camera rendering loop
+│   └── 05_train_yolo.py                 # Downstream detector training
 │
-├── 📁 notebooks/           # Exploration and visualization notebooks
+├── 📁 notebooks/                # Exploration and visualization
 │
 └── 📁 docs/
-    └── project-plan-tr.docx   # Original Turkish project plan document
+    └── project-plan-tr.docx     # Original Turkish project plan
 ```
 
 ---
@@ -351,13 +384,12 @@ ultralytics (YOLOv8+)
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Step 1 — Data Collection & 2D Segmentation | 🔲 Not started | Need CPL filters, gimbal setup |
-| Step 2 — Camera Pose Estimation (SfM) | 🔲 Not started | GLUEMAP installation pending |
-| Step 3 — Semantic 3DGS Training | 🔲 Not started | GPU environment setup needed |
+| Existing sequences & frames | ✅ Complete | Video sequences and frame visuals available |
+| Step 1 — Single-Frame Annotation | 🔲 Not started | Labeling team: pick reference frame, annotate masks + SKU IDs |
+| Step 2 — Camera Pose Estimation (SfM) | 🔲 Not started | Run GLUEMAP on existing sequences |
+| Step 3 — Semantic 3DGS Training | 🔲 Not started | Gaussian Grouping; GPU environment setup needed |
 | Step 4 — Synthetic Data Rendering | 🔲 Not started | Depends on Step 3 |
 | Step 5 — YOLO Training & Deployment | 🔲 Not started | Depends on Step 4 |
-
-> Legend: 🔲 Not started · 🔄 In progress · ✅ Complete · ⚠️ Blocked
 
 ---
 
