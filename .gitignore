@@ -1,0 +1,32 @@
+# Large data files
+data/raw/
+data/keyframes/
+data/synthetic/
+
+# Model checkpoints and outputs
+models/gaussian/*.ply
+models/gaussian/*.pth
+models/yolo/*.pt
+models/sfm/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Large video files
+*.mp4
+*.mov
+*.avi
+
+# Keep placeholders
+!**/.gitkeep
