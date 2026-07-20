@@ -14,7 +14,8 @@ Before diving into advanced volumetric modeling, it is essential to establish a 
 |---|----------|-----------|
 | 1 | [Stanford CS231A: Computer Vision, From 3D Reconstruction to Recognition](https://web.stanford.edu/class/cs231a/index.html) (Course) | **3D Basics:** Essential theoretical foundation covering camera models, projective geometry, and classical 3D reconstruction pipelines. |
 | 2 | [Differentiable Rendering: A Survey](https://arxiv.org/abs/2006.12057) (CGF 2020) | **Optimization Core:** Explains how to bridge classical computer graphics and deep learning by backpropagating gradients through rendering processes. |
-| 3 | [State of the Art on Neural Rendering](https://arxiv.org/abs/2004.03805) (EG 2020) | **3D Representations:** A comprehensive overview of how 3D scenes are represented (voxels, point clouds, meshes, implicit functions) and rendered prior to explicit 3DGS architectures. |
+| 3 | [State of the Art on Neural Rendering](https://arxiv.org/abs/2004.03805) (EG 2020) | **Neural Rendering:** A comprehensive overview of neural rendering techniques prior to explicit 3DGS architectures. |
+| 4 | 3D Representation Methods: A Survey | **3D Representations:** A comparative look at voxels, point clouds, meshes, and implicit functions to understand why the field evolved towards NeRF and 3DGS. |
 
 
 ## 1. Core 3DGS & NeRF
