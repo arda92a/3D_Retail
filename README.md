@@ -6,6 +6,17 @@ A curated collection of papers and repositories for semantic 3D reconstruction, 
 
 ## Papers and Repositories
 
+## 0. Foundations of 3D Computer Vision & Projective Geometry
+
+Before diving into advanced volumetric modeling, it is essential to establish a strong theoretical background in multiple view geometry, projective camera models, and the mechanics of differentiable rendering that make neural scene optimization possible.
+
+| # | Resource | Key Focus |
+|---|----------|-----------|
+| 1 | [Stanford CS231A: Computer Vision, From 3D Reconstruction to Recognition](https://web.stanford.edu/class/cs231a/index.html) (Course) | **3D Basics:** Essential theoretical foundation covering camera models, projective geometry, and classical 3D reconstruction pipelines. |
+| 2 | [Differentiable Rendering: A Survey](https://arxiv.org/abs/2006.12057) (CGF 2020) | **Optimization Core:** Explains how to bridge classical computer graphics and deep learning by backpropagating gradients through rendering processes. |
+| 3 | [State of the Art on Neural Rendering](https://arxiv.org/abs/2004.03805) (EG 2020) | **3D Representations:** A comprehensive overview of how 3D scenes are represented (voxels, point clouds, meshes, implicit functions) and rendered prior to explicit 3DGS architectures. |
+
+
 ## 1. Core 3DGS & NeRF
 
 To dive into 3D scene reconstruction, one must first understand the foundations of volumetric modeling. This section covers the transition from implicit neural networks (NeRF) to the current real-time explicit standard, 3D Gaussian Splatting (3DGS).
