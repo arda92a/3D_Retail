@@ -28,5 +28,9 @@ venv/
 *.mov
 *.avi
 
+# Docs
+docs/
+
 # Keep placeholders
 !**/.gitkeep
+
