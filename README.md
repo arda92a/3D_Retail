@@ -26,7 +26,6 @@ To dive into 3D scene reconstruction, one must first understand the foundations 
 |---|----------|-----------|
 | 1 | [NeRF: Representing Scenes as Neural Radiance Fields](https://arxiv.org/abs/2003.08934) (ECCV 2020) | The starting point of implicit neural 3D volumetric representation in the literature. |
 | 2 | [3D Gaussian Splatting for Real-Time Radiance Field Rendering](https://arxiv.org/abs/2308.04079) (SIGGRAPH 2023) · [Repo](https://github.com/graphdeco-inria/gaussian-splatting) | The foundational paper for the current explicit, real-time 3DGS architecture that replaces NeRF. |
-| 3 | [3DGS vs NeRF: Side-by-Side Reconstruction Comparison](https://assets-eu.researchsquare.com/files/rs-7300179/v1_covered_60fc3280-68ec-47c4-ae1d-228296ea12c4.pdf) | A comparative analysis of advantages and disadvantages for industrial transitions. |
 | 4 | [VCR-GauS: View Consistent Depth-Normal Regularizer](https://proceedings.neurips.cc/paper_files/paper/2024/file/fc9f83d9925e6885e8f1ae1e17b3c44b-Paper-Conference.pdf) (NeurIPS 2024) | Essential regularization techniques for smooth surfaces and reflections, such as retail shelves. |
 | 5 | [Nerfstudio: A Modular Framework for Neural Radiance Field Development](https://arxiv.org/abs/2302.04264) (SIGGRAPH 2023) · [Repo](https://github.com/nerfstudio-project/nerfstudio) | The most popular modular framework to train, test, and render NeRF and 3DGS models. |
 
@@ -36,14 +35,10 @@ Before a radiance field can be trained, one usually needs accurate camera poses.
 
 | # | Resource | Key Focus |
 |---|----------|-----------|
-| 1 | [Assessing COLMAP, DROID-SLAM, and NeRF-SLAM in 3D Scene Reconstruction](https://lup.lub.lu.se/student-papers/record/9127302/file/9127313.pdf) (Thesis) | **Baseline Setup:** Start here to understand the current landscape and limitations of classical and SLAM-based pose estimation. |
-| 2 | [Fast Intrinsic–Extrinsic Calibration for Pose-Only SfM](https://www.mdpi.com/2072-4292/17/13/2247) (Remote Sensing 2025) | **Calibration Basics:** Understand the mechanics of intrinsic and extrinsic matrices before moving to deep learning methods. |
-| 3 | [DUSt3R: Geometric 3D Vision Made Easy](https://arxiv.org/html/2312.14132v1) (CVPR 2024) | **The Paradigm Shift:** A fundamental breakthrough mapping unposed images directly to 3D point clouds without classical SfM. |
-| 4 | [MV-DUSt3R+: Single-Stage Scene Reconstruction in 2 Seconds](https://mv-dust3rp.github.io/) (CVPR 2025 Oral) | **Evolution:** The immediate successor to DUSt3R, optimizing for multi-view consistency and extreme speed. |
-| 5 | [COLMAP-Free 3D Gaussian Splatting](https://openaccess.thecvf.com/content/CVPR2024/papers/Fu_COLMAP-Free_3D_Gaussian_Splatting_CVPR_2024_paper.pdf) (CVPR 2024) · [arXiv](https://arxiv.org/html/2312.07504v1) | **Integration:** Bridges the gap by showing how to train 3DGS *without* needing COLMAP preprocessing. |
-| 6 | [GLUEMAP: Global SfM Meets Feedforward Reconstruction](https://lpanaf.github.io/cvpr26_gluemap/) (CVPR 2026) · [GitHub](https://github.com/colmap/gluemap) | **State-of-the-Art:** Merges the reliability of global SfM with the speed of feed-forward network priors. |
-| 7 | [CT-NeRF: Incremental Optimizing NeRF and Poses with Complex Trajectory](https://arxiv.org/html/2404.13896v2) | **Dynamic Trajectories:** Explores joint optimization of poses and scene representation simultaneously. |
-| 8 | [Object-Centric Pose Estimation by Scale Alignment of Ray Diffusion and ICP](https://www.mdpi.com/2076-3417/16/13/6624) (Applied Sciences) | **Specialized Application:** Applies pose estimation techniques specifically for precise, object-centric manipulation. |
+| 1 | [DUSt3R: Geometric 3D Vision Made Easy](https://openaccess.thecvf.com/content/CVPR2024/papers/Wang_DUSt3R_Geometric_3D_Vision_Made_Easy_CVPR_2024_paper.pdf) (CVPR 2024) | **The Paradigm Shift:** A fundamental breakthrough mapping unposed images directly to 3D point clouds without classical SfM. |
+| 2 | [MV-DUSt3R+: Single-Stage Scene Reconstruction in 2 Seconds](https://openaccess.thecvf.com/content/CVPR2025/papers/Tang_MV-DUSt3R_Single-Stage_Scene_Reconstruction_from_Sparse_Views_In_2_Seconds_CVPR_2025_paper.pdf) (CVPR 2025 Oral) | **Evolution:** The immediate successor to DUSt3R, optimizing for multi-view consistency and extreme speed. |
+| 3 | [COLMAP-Free 3D Gaussian Splatting](https://openaccess.thecvf.com/content/CVPR2024/papers/Fu_COLMAP-Free_3D_Gaussian_Splatting_CVPR_2024_paper.pdf) (CVPR 2024) · [arXiv](https://arxiv.org/html/2312.07504v1) | **Integration:** Bridges the gap by showing how to train 3DGS *without* needing COLMAP preprocessing. |
+| 4 | [GLUEMAP: Global SfM Meets Feedforward Reconstruction](https://arxiv.org/pdf/2605.26103) (CVPR 2026) · [GitHub](https://github.com/colmap/gluemap) | **State-of-the-Art:** Merges the reliability of global SfM with the speed of feed-forward network priors. |
 
 
 ## 3. Semantic Scene Understanding in 3D
